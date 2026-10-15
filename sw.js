@@ -1,6 +1,6 @@
 // Boermeter service worker: bewaart model, lettertypes en app-bestanden op de gsm.
 // De pagina zelf en de API gaan altijd naar de server.
-const CACHE = 'boermeter-v14';
+const CACHE = 'boermeter-v15';
 const VAST = ['model/model.json', 'model/group1-shard1of4.bin', 'model/group1-shard2of4.bin', 'model/group1-shard3of4.bin', 'model/group1-shard4of4.bin'];
 
 self.addEventListener('install', (e) => {

@@ -42,7 +42,16 @@ function stand(array $spelers): array {
     $tel = array_values($tel);
     usort($tel, fn($a, $b) => ($b['boer'] + $b['scheet']) <=> ($a['boer'] + $a['scheet']));
 
-    return ['vandaag' => $dag, 'top' => $top, 'aantallen' => $tel];
+    // Eerste boer en eerste scheet van vandaag (vroegste tijdstip, bij gelijke tijd het laagste id).
+    $eerste = ['boer' => null, 'scheet' => null];
+    foreach (['boer', 'scheet'] as $so) {
+        $q = $db->prepare('SELECT id FROM bm_metingen WHERE aangemaakt >= ? AND soort = ? ORDER BY aangemaakt ASC, id ASC LIMIT 1');
+        $q->execute([$vandaag, $so]);
+        $id = $q->fetchColumn();
+        $eerste[$so] = $id === false ? null : (int)$id;
+    }
+
+    return ['vandaag' => $dag, 'top' => $top, 'aantallen' => $tel, 'eerste' => $eerste];
 }
 
 $actie = $_GET['a'] ?? '';

@@ -261,7 +261,9 @@
       const top = (s) => alle.filter((r) => r.soort === s).sort((a, b) => b.db - a.db).slice(0, 10);
       const aantallen = CFG.spelers.map((p) => ({ speler: p, boer: extra[p][0] + alle.filter((r) => r.speler === p && r.soort === 'boer').length, scheet: extra[p][1] + alle.filter((r) => r.speler === p && r.soort === 'scheet').length }))
         .sort((a, b) => (b.boer + b.scheet) - (a.boer + a.scheet));
-      return { vandaag: rijen.slice().sort((a, b) => b.db - a.db || a.id - b.id), top: { boer: top('boer'), scheet: top('scheet') }, aantallen };
+      const eerste = {};
+      ['boer', 'scheet'].forEach((so) => { const r = rijen.filter((x) => x.soort === so).sort((a, b) => new Date(a.tijd) - new Date(b.tijd) || a.id - b.id)[0]; eerste[so] = r ? r.id : null; });
+      return { vandaag: rijen.slice().sort((a, b) => b.db - a.db || a.id - b.id), top: { boer: top('boer'), scheet: top('scheet') }, aantallen, eerste };
     }
     return {
       async stand() { return bereken(); },
@@ -280,15 +282,31 @@
   }
 
   /* ---------------- rijen ---------------- */
+  function uur(tijd) {
+    if (!tijd) return '';
+    if (tijd.indexOf('T') > -1) { const d = new Date(tijd); return isNaN(d) ? '' : d.toLocaleTimeString('nl-BE', { hour: '2-digit', minute: '2-digit' }); }
+    const m = /(\d{2}):(\d{2})/.exec(tijd); return m ? m[1] + ':' + m[2] : '';
+  }
+  function isEerste(r) { return !!(stand && stand.eerste && stand.eerste[r.soort] === r.id); }
   function rij(r, plaats, opties) {
+    const o = opties || {};
     const li = document.createElement('li');
-    li.className = 'rij' + (plaats === 1 ? ' goud' : '') + (opties && opties.nieuw ? ' nieuw' : '');
+    li.className = 'rij' + (plaats === 1 ? ' goud' : '') + (o.nieuw ? ' nieuw' : '');
     const p = document.createElement('span'); p.className = 'plaats'; p.textContent = plaats;
-    const w = document.createElement('span'); w.className = 'wie'; w.textContent = r.speler;
+    const w = document.createElement('span'); w.className = 'wie';
+    const nm = document.createElement('span'); nm.className = 'naam-tekst'; nm.textContent = r.speler;
+    w.append(nm);
+    if (o.dag) {
+      const meta = document.createElement('span'); meta.className = 'meta';
+      const u = document.createElement('span'); u.className = 'uur'; u.textContent = uur(r.tijd);
+      meta.append(u);
+      if (isEerste(r)) { const t = document.createElement('span'); t.className = 'eerste ' + r.soort; t.textContent = '1ste ' + r.soort; meta.append(t); }
+      w.append(meta);
+    }
     const s = document.createElement('span'); s.className = 'soort ' + r.soort; s.textContent = r.soort;
     const v = document.createElement('span'); v.className = 'waarde'; v.textContent = fmt(r.db) + ' dB';
     li.append(p, w, s, v);
-    if (opties && opties.id) li.dataset.id = r.id;
+    if (o.id) li.dataset.id = r.id;
     return li;
   }
   function leeg(tekst) { const li = document.createElement('li'); li.className = 'rij leeg'; li.textContent = tekst; return li; }
@@ -324,7 +342,7 @@
     let doelRij = null;
     tonen.forEach((r) => {
       const plaats = rijen.indexOf(r) + 1;
-      const li = rij(r, plaats, { nieuw: r.id === nieuweId, id: true });
+      const li = rij(r, plaats, { nieuw: r.id === nieuweId, id: true, dag: true });
       if (r.id === nieuweId) { doelRij = li; li.style.visibility = 'hidden'; }
       lijst.append(li);
     });
@@ -437,7 +455,7 @@
     }
     const rijen = bordTab === 'vandaag' ? stand.vandaag : stand.top[bordTab];
     if (!rijen.length) { lijst.append(leeg(bordTab === 'vandaag' ? 'Vandaag nog niets gemeten.' : 'Nog niets gemeten.')); return; }
-    rijen.forEach((r, i) => lijst.append(rij(r, i + 1)));
+    rijen.forEach((r, i) => lijst.append(rij(r, i + 1, { dag: bordTab === 'vandaag' })));
     pasIn($('s-bord'), lijst);
   }
 

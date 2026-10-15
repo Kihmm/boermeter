@@ -8,7 +8,7 @@ if (!bm_sleutel_ok()) bm_niet_gevonden();
 bm_onthoud();
 
 $c = bm_config();
-$v = '14';
+$v = '15';
 $sleutel = rawurlencode($c['sleutel']);
 header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'");
 header('Cache-Control: no-store');
